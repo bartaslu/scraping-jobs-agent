@@ -38,7 +38,7 @@ public class DailyJobWorkflow {
             int collected = collectionService.collectJobs();
             log.info("Collected {} new jobs", collected);
 
-            int scored = scoringService.scoreUnscoredJobs(10);
+            int scored = scoringService.scoreUnscoredJobs(100);
             log.info("Scored {} jobs", scored);
 
             log.info("Daily job workflow completed");
