@@ -127,18 +127,38 @@ public class ClaudeJobScoringService {
                     .retrieve()
                     .body(JsonNode.class);
 
-            if (response == null
-                    || !response.path("content").isArray()
-                    || response.path("content").isEmpty()) {
-                throw new IllegalStateException(
-                        "Claude returned an empty response"
-                );
+            if (response == null){
+                throw new IllegalStateException("Claude returned a NULL API response for job" + jobId);
             }
 
-            String responseText = response.path("content")
-                    .get(0).path("text").asString();
+            JsonNode content = response.path("content");
+            String stopReason = response.path("stop_reason").asString("unknown");
 
-            log.info("Claude raw response: {}", responseText);
+            StringBuilder responseTextBuilder = new StringBuilder();
+
+            if(content.isArray()){
+                for(JsonNode block : content){
+                    if("text".equals(block.path("Type").asString("")) && block.path("text").isString()){
+                        responseTextBuilder.append(block.path("text").asString());
+                    }
+                }
+            }
+
+            String responseText = responseTextBuilder.toString();
+
+            log.info("Claude response metadata for job {}: stop_reason={}, input_tokens={}, output_tokens={}, content_blocks={}, text_length={}",
+                    jobId,
+                    stopReason,
+                    response.path("usage").path("input_tokens").asString("unknown"),
+                    response.path("usage").path("output_tokens").asString("unknown"),
+                    content.isArray() ? content.size() : 0,
+                    responseText.length());
+
+            if(responseText.isBlank()){
+                throw new IllegalStateException("Claude returned no text for job " + jobId + "; stop_reason=" + stopReason);
+            }
+
+            log.debug("Claude response text for job {}: {}", jobId, responseText);
 
             JsonNode resultJson = objectMapper.readTree(extractJson(responseText));
 

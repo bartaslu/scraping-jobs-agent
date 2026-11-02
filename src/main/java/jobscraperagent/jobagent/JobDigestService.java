@@ -8,8 +8,14 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @Service
 public class JobDigestService {
+    private static final Logger log =
+            LoggerFactory.getLogger(JobDigestService.class);
+
     private final JobRepository jobRepository;
     private final JobSearchPreferences preferences;
     private final EmailNotificationService emailService;
@@ -25,11 +31,21 @@ public class JobDigestService {
 
     @Transactional
     public int sendDigestIfNeeded(){
+        int minimumScore = preferences.minimumRelevanceScore();
+
         List<Job> jobs = jobRepository.findByRelevanceScoreGreaterThanEqualAndNotificationSentAtIsNullOrderByRelevanceScoreDesc(
-                preferences.minimumRelevanceScore()
+                minimumScore
         );
 
+        log.info(
+                "Preparing job digest: minimumScore={}, eligibleJobs={}",
+                minimumScore,
+                jobs.size()
+        );
+
+
         if(jobs.isEmpty()){
+            log.info("No eligible jobs; email digest will not be sent.");
             return 0;
         }
 
@@ -72,6 +88,8 @@ public class JobDigestService {
                 body.toString()
         );
 
+        log.info("Job digest email accepted by the configured mail sender.");
+
         Instant sentAt = Instant.now();
 
         for(Job job : jobs){
@@ -79,7 +97,7 @@ public class JobDigestService {
         }
 
         jobRepository.saveAll(jobs);
-
+        log.info("Marked {} jobs as notified.", jobs.size());
         return jobs.size();
     }
 
