@@ -1,0 +1,37 @@
+services:
+  db:
+    image: postgres:17
+    container_name: job-agent-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: jobagent
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?}
+    volumes:
+      - job_agent_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U jobagent -d jobagent"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  job-agent:
+    image: job-agent:local
+    container_name: job-agent-app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/jobagent
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_APP_PASSWORD: ${MAIL_APP_PASSWORD}
+      JOB_AGENT_SCHEDULE_CRON: "0 0 8 * * *"
+      JOB_AGENT_SCHEDULE_ZONE: Europe/Vilnius
+
+volumes:
+  job_agent_data:
+    name: jobagent_job_agent_data

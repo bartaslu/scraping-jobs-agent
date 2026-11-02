@@ -1,0 +1,20 @@
+### Collect jobs from configured sources
+POST http://localhost:8080/api/jobs/collect
+
+### Retrieve collected jobs
+GET http://localhost:8080/api/jobs
+
+### Score job with ID 1 using Claude
+POST http://localhost:8080/api/jobs/4/score
+
+### Score up to 10 jobs taht have not been scored
+POST http://localhost:8080/api/jobs/score-unscored?limit=10
+
+### Get jobs meeting the minimum relevance score
+GET http://localhost:8080/api/jobs/relevant
+
+### Run scheduled job now
+POST http://localhost:8080/api/workflow/run
+
+### Send test email
+POST http://localhost:8080/api/email/test
