@@ -132,13 +132,14 @@ public class ClaudeJobScoringService {
             }
 
             JsonNode content = response.path("content");
+            log.info("Claude content blocks for job {}: {}", jobId, content);
             String stopReason = response.path("stop_reason").asString("unknown");
 
             StringBuilder responseTextBuilder = new StringBuilder();
 
             if(content.isArray()){
                 for(JsonNode block : content){
-                    if("text".equals(block.path("Type").asString("")) && block.path("text").isString()){
+                    if("text".equals(block.path("type").asString("")) && block.path("text").isString()){
                         responseTextBuilder.append(block.path("text").asString());
                     }
                 }
