@@ -14,13 +14,12 @@ public class DailyJobWorkflow {
 
     private final JobCollectionService collectionService;
     private final JobBatchScoringService scoringService;
+    private final JobDigestService digestService;
 
-    public DailyJobWorkflow(
-            JobCollectionService collectionService,
-            JobBatchScoringService scoringService
-    ) {
+    public DailyJobWorkflow(JobCollectionService collectionService, JobBatchScoringService scoringService, JobDigestService digestService) {
         this.collectionService = collectionService;
         this.scoringService = scoringService;
+        this.digestService = digestService;
     }
 
     public void runNow(){
@@ -41,6 +40,9 @@ public class DailyJobWorkflow {
             int scored = scoringService.scoreUnscoredJobs(100);
             log.info("Scored {} jobs", scored);
 
+            int sentCount = digestService.sendDigestIfNeeded();
+
+            log.info("Daily workflow completed. Notified {} jobs.", sentCount);
             log.info("Daily job workflow completed");
         } catch (Exception e) {
             log.error("Daily job workflow failed", e);
