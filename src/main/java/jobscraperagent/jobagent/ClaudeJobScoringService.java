@@ -80,11 +80,14 @@ public class ClaudeJobScoringService {
                     Return ONLY valid JSON with this exact structure:
                     {
                       "score": 75,
-                      "explanation": "Short explanation of the assessment.",
+                      "explanation": "Up to 3 concise sentences explaining the match.",
                       "matchedTechnologies": ["Java", "Spring Boot"]
                     }
 
                     The score must be an integer from 0 to 100.
+                    
+                    Keep the explanation under 70words. Return the complete JSON object.
+                    Do not include thinking or any text outside the JSON
                     """;
 
             Map<String, Object> jobData = Map.of(
@@ -109,7 +112,7 @@ public class ClaudeJobScoringService {
 
             Map<String, Object> request = Map.of(
                     "model", model,
-                    "max_tokens", 500,
+                    "max_tokens", 1000,
                     "system", systemPrompt,
                     "messages", List.of(
                             Map.of(
@@ -132,7 +135,6 @@ public class ClaudeJobScoringService {
             }
 
             JsonNode content = response.path("content");
-            log.info("Claude content blocks for job {}: {}", jobId, content);
             String stopReason = response.path("stop_reason").asString("unknown");
 
             StringBuilder responseTextBuilder = new StringBuilder();
@@ -146,6 +148,14 @@ public class ClaudeJobScoringService {
             }
 
             String responseText = responseTextBuilder.toString();
+
+            if("max_tokens".equals(stopReason)){
+                log.warn("Claude response was truncated for job {}. Increase max_tokens or shorten the prompt.",
+                        jobId
+                );
+
+                return null;
+            }
 
             log.info("Claude response metadata for job {}: stop_reason={}, input_tokens={}, output_tokens={}, content_blocks={}, text_length={}",
                     jobId,
