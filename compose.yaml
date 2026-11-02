@@ -19,6 +19,8 @@ services:
     image: job-agent:local
     container_name: job-agent-app
     restart: unless-stopped
+    ports:
+      - "8080:8080"
     depends_on:
       db:
         condition: service_healthy
